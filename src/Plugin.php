@@ -7,6 +7,7 @@ class Plugin
     public $version = '4.0';
     public $optionsName = 'tr_seo_options';
     public $postTypes = null;
+    public $title = null;
 
     public function __construct()
     {
@@ -99,8 +100,10 @@ class Plugin
         $newTitle = trim(tr_posts_field( 'seo.meta.title', $this->itemId ));
 
         if ( !empty($newTitle) ) {
+            $this->title = $newTitle;
             return [$newTitle];
         } else {
+            $this->title = $title;
             return $title;
         }
 
@@ -209,6 +212,77 @@ class Plugin
                 echo "<meta name=\"{$twName}\" content=\"{$twContent}\" />";
             }
         }
+
+        $this->schemaJsonLd([
+           'url' => $url,
+           'description' => $desc,
+           'og_global' => $seo_global,
+        ]);
+    }
+
+    public function schemaJsonLd(array $data)
+    {
+        /** @var WP_Post $post */
+        global $post;
+        /**
+         * @var $url
+         * @var $og_global
+         * @var $description
+         */
+        extract($data);
+
+        if(empty($og_global)) { return; }
+
+        $home = home_url();
+        $lang = esc_js(str_replace('_', '-', $og_global['og']['locale']));
+        $site = $og_global['og']['site_name'];
+        $title = str_replace('&amp;', '&', esc_js($this->title));
+        $desc = esc_js($description);
+
+        // ISO 8601 Date Format
+        $pub = get_the_date('c', $post);
+        $mod = get_the_modified_date("c", $post);
+
+        // Same As
+        $same = array_map(function($value) {
+            return '"'. esc_url_raw($value) .'"';
+        }, $og_global['og']['social_links']);
+
+        $schema = [
+            "@context" => "http://schema.org/",
+            "@graph"=> [
+                    [
+                        "@type"=>"Organization",
+                        "@id"=>"$home#organization",
+                        "name"=>"$site",
+                        "url"=> "$home",
+                        "sameAs"=> [$same]
+                    ],
+                    [
+                        "@type"=>"WebSite",
+                        "@id"=> "$home#website",
+                        "url"=> "$home",
+                        "name"=> "$site",
+                        "publisher"=>  [
+                        "@id"=> "$home#organization"
+                        ]
+                    ],
+                    [
+                        "@type"=> "WebPage",
+                        "@id"=> "$url#webpage",
+                        "url"=> "$url",
+                        "inLanguage"=> "$lang",
+                        "name"=> "$title",
+                        "isPartOf"=> [ "@id"=> "$home/#website"],
+                        "datePublished"=> "$pub",
+                        "dateModified"=> "$mod",
+                        "description"=> "$desc"
+                    ]
+                ]
+            ];
+        ?>
+        <script type="application/ld+json"><?php echo json_encode($schema); ?></script>
+        <?php
     }
 
     // 301 Redirect

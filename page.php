@@ -18,6 +18,7 @@ $form = tr_form()->useJson();
         $form->setGroup( $this->optionsName . '.og');
         echo $form->text('Locale')->setDefault('en_US');
         echo $form->text('Site Name');
+        echo $form->items('Social Links')->setInputType('url')->setHelp('Used by Schema to populate the "Same As" fields. Social media URLs are a common value for "Same As".');
     };
 
     // API
