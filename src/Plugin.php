@@ -422,8 +422,8 @@ class Plugin
                 $form->select( 'index', [], $help )->setOptions($index_opts)
             ]);
 
-            $schema = "<a class=\"button\" href=\"https://search.google.com/structured-data/testing-tool/u/0/#url='.$link.'\" target=\"_blank\">Analyze Schema</a>";
-            $speed = "<a class=\"button\" href=\"https://developers.google.com/speed/pagespeed/insights/?url='.$link.'\" target=\"_blank\">Analyze Page Speed</a>";
+            $schema = "<a class=\"button\" href=\"https://search.google.com/structured-data/testing-tool/u/0/#url=$link\" target=\"_blank\">Analyze Schema</a>";
+            $speed = "<a class=\"button\" href=\"https://developers.google.com/speed/pagespeed/insights/?url=$link\" target=\"_blank\">Analyze Page Speed</a>";
 
             echo $form->rowText('<div class="control-label"><span class="label">Google Tools</span></div><div class="control"><div class="button-group">'.$speed.$schema.'</div></div>');
         };
