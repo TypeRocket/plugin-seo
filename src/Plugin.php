@@ -248,7 +248,7 @@ class Plugin
             return esc_url_raw($value);
         }, $og_global['og']['social_links']);
 
-        $schema = [
+        $schema_web = [
             "@context" => "http://schema.org/",
             "@graph"=> [
                     [
@@ -280,9 +280,36 @@ class Plugin
                     ]
                 ]
             ];
-        ?>
-        <script type="application/ld+json"><?php echo json_encode($schema); ?></script>
-        <?php
+
+        if($schema_web) {
+            ?><script type="application/ld+json"><?php echo json_encode($schema_web); ?></script><?php
+        }
+
+        $biz = $og_global['schema']['enable'] ?? null;
+
+        if($biz == '1') {
+            $location = array_map('esc_js', $og_global['schema']['location']);
+            $schema = array_map('esc_js', $og_global['schema']);
+            $keyword = $schema['keyword'];
+            $phone   = $schema['phone'];
+
+            $schema_biz = [
+                "@context" => "http://schema.org/",
+                "@type" => "ProfessionalService",
+                "additionalType" => "http://www.productontology.org/id/$keyword",
+                "url" => $home,
+                "telephone" => $phone,
+                "address" => array_filter([
+                    "@type" => "PostalAddress",
+                    "addressLocality" => $location['city'],
+                    "addressRegion" => $location['state'],
+                    "addressCountry" => $location['country']
+                ]),
+                "sameAs"=> $same
+            ];
+
+            ?><script type="application/ld+json"><?php echo json_encode(array_filter($schema_biz)); ?></script><?php
+        }
     }
 
     // 301 Redirect
