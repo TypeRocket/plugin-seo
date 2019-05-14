@@ -4,7 +4,7 @@ namespace TypeRocketSEO;
 class Plugin
 {
     public $itemId = null;
-    public $version = '4.0';
+    public $version = '4.1';
     public $optionsName = 'tr_seo_options';
     public $postTypes = null;
     public $title = null;
