@@ -31,7 +31,10 @@ $form = tr_form()->useJson();
         echo $form->text('Name', ['placeholder' => 'My Business, LLC']);
         echo $form->text('Description');
         echo $form->text('Keyword', ['placeholder' => 'My_service_type'])->setHelp('You can search for your "Service Type" keyword on <a target="_blank" href="http://www.productontology.org/">productontology.org</a>');
+        echo $form->text('Price Range', ['placeholder' => '$100 - $1000']);
         echo $form->text('Phone');
+        echo $form->image('Logo');
+        echo $form->image('Company Image');
         echo $form->location('Location')->enableCountry();
     };
 
@@ -49,7 +52,7 @@ $form = tr_form()->useJson();
     // Layout
     tr_tabs()->setSidebar( $save )
         ->addTab( 'Open Graph', $og )
-        ->addTab( 'Advanced Schema', $provider )
+        ->addTab( 'Services Schema', $provider )
         ->addTab( 'Twitter', $twitter )
         ->render( 'box' );
     echo $form->close();

@@ -292,13 +292,18 @@ class Plugin
             $schema = array_map('esc_js', $og_global['schema']);
             $keyword = $schema['keyword'];
             $phone   = $schema['phone'];
+            $price   = $schema['price_range'];
 
-            $schema_biz = [
+            $schema_biz = array_filter([
                 "@context" => "http://schema.org/",
                 "@type" => "ProfessionalService",
                 "additionalType" => "http://www.productontology.org/id/$keyword",
                 "url" => $home,
+                "name" => $schema['name'],
+                "logo" => $schema['logo'] ? wp_get_attachment_image_src($schema['logo'], 'full')[0] : null,
+                "image" => $schema['company_image'] ? wp_get_attachment_image_src($schema['company_image'], 'full')[0] : null,
                 "telephone" => $phone,
+                "priceRange" => $price,
                 "address" => array_filter([
                     "@type" => "PostalAddress",
                     "addressLocality" => $location['city'],
@@ -306,9 +311,9 @@ class Plugin
                     "addressCountry" => $location['country']
                 ]),
                 "sameAs"=> $same
-            ];
+            ]);
 
-            ?><script type="application/ld+json"><?php echo json_encode(array_filter($schema_biz)); ?></script><?php
+            ?><script type="application/ld+json"><?php echo json_encode($schema_biz); ?></script><?php
         }
     }
 
