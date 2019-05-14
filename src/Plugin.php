@@ -245,7 +245,7 @@ class Plugin
 
         // Same As
         $same = array_map(function($value) {
-            return '"'. esc_url_raw($value) .'"';
+            return esc_url_raw($value);
         }, $og_global['og']['social_links']);
 
         $schema = [
