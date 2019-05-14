@@ -347,7 +347,11 @@ class Plugin
                 $form->select( 'follow', [], $follow )->setOptions($follow_opts),
                 $form->select( 'index', [], $help )->setOptions($index_opts)
             ]);
-            echo $form->rowText('<div class="control-label"><span class="label">Google Page Speed</span></div><div class="control"><a class="button" href="https://developers.google.com/speed/pagespeed/insights/?url='.$link.'" target="_blank">Analyze Page Speed Now</a></div>');
+
+            $schema = "<a class=\"button\" href=\"https://search.google.com/structured-data/testing-tool/u/0/#url='.$link.'\" target=\"_blank\">Analyze Schema</a>";
+            $speed = "<a class=\"button\" href=\"https://developers.google.com/speed/pagespeed/insights/?url='.$link.'\" target=\"_blank\">Analyze Page Speed</a>";
+
+            echo $form->rowText('<div class="control-label"><span class="label">Google Tools</span></div><div class="control"><div class="button-group">'.$speed.$schema.'</div></div>');
         };
 
         $tabs = new \TypeRocket\Elements\Tabs();
