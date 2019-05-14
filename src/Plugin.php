@@ -256,7 +256,7 @@ class Plugin
                         "@id"=>"$home#organization",
                         "name"=>"$site",
                         "url"=> "$home",
-                        "sameAs"=> [$same]
+                        "sameAs"=> $same
                     ],
                     [
                         "@type"=>"WebSite",
