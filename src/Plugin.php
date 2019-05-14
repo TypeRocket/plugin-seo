@@ -300,6 +300,7 @@ class Plugin
                 "additionalType" => "http://www.productontology.org/id/$keyword",
                 "url" => $home,
                 "name" => $schema['name'],
+                "description" => $schema['description'],
                 "logo" => $schema['logo'] ? wp_get_attachment_image_src($schema['logo'], 'full')[0] : null,
                 "image" => $schema['company_image'] ? wp_get_attachment_image_src($schema['company_image'], 'full')[0] : null,
                 "telephone" => $phone,
