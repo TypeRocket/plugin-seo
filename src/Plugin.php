@@ -263,7 +263,7 @@ class Plugin
 
             $og_type = [
                 'label' => __('Page Type'),
-                'help'  => __('Set the open graph description to override "Search Result Description". Will be used by FB, Google+ and Pinterest.')
+                'help'  => __('Set the open graph page type. You can never go wrong with "Article".')
             ];
 
             $img = [
@@ -292,16 +292,19 @@ class Plugin
                 __('Summary large image') => 'summary_large_image',
             ];
 
-            echo $form->text( 'tw_site')->setLabel('Twitter Account')->setAttribute('placeholder', '@username');
-            echo $form->text( 'tw_creator')->setLabel('Author Twitter Account')->setAttribute('placeholder', '@username');
-            echo $form->select( 'tw_card')->setOptions($card_opts)->setLabel('Card Type')->setSetting('help', $tw_help);
-            echo $form->text( 'tw_title')->setLabel('Title')->setAttribute('maxlength', 70 );
-            echo $form->textarea( 'tw_desc')->setLabel('Description')->setHelp( __('Description length is dependent on card type.') );
-            echo $form->image( 'tw_img', [], $tw_img );
+            echo $form->text('tw_site')->setLabel('Site Twitter Account')->setAttribute('placeholder', '@username');
+            echo $form->text('tw_creator')->setLabel('Page Author\'s Twitter Account')->setAttribute('placeholder', '@username');
+            echo $form->select('tw_card')->setOptions($card_opts)->setLabel('Card Type')->setSetting('help', $tw_help);
+            echo $form->text('tw_title')->setLabel('Title')->setAttribute('maxlength', 70 );
+            echo $form->textarea('tw_desc')->setLabel('Description')->setHelp( __('Description length is dependent on card type.') );
+            echo $form->image('tw_img', [], $tw_img );
         };
 
         // Advanced
         $advanced = function() use ($form){
+            global $post;
+
+            $link = esc_url_raw(get_permalink($post));
 
             $redirect = [
                 'label'    => __('301 Redirect'),
@@ -344,6 +347,7 @@ class Plugin
                 $form->select( 'follow', [], $follow )->setOptions($follow_opts),
                 $form->select( 'index', [], $help )->setOptions($index_opts)
             ]);
+            echo $form->rowText('<div class="control-label"><span class="label">Google Page Speed</span></div><div class="control"><a class="button" href="https://developers.google.com/speed/pagespeed/insights/?url='.$link.'" target="_blank">Analyze Page Speed Now</a></div>');
         };
 
         $tabs = new \TypeRocket\Elements\Tabs();
@@ -376,8 +380,7 @@ class Plugin
         <div id="tr-seo-preview" class="control-group">
             <h4><?php _e('Example Preview'); ?></h4>
 
-            <p><?php _e('Google has <b>no definitive character limits</b> for page "Titles" and "Descriptions". Because of this
-                there is no way to provide an accurate preview. But, your Google search result may look something like:'); ?>
+            <p><?php _e('Google has <b>no definitive character limits</b> for page "Titles" and "Descriptions". However, your Google search result may look something like:'); ?>
 
             <div class="tr-seo-preview-google">
         <span id="tr-seo-preview-google-title-orig">
