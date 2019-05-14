@@ -4,6 +4,9 @@ namespace TypeRocketSEO;
 class Plugin
 {
     public $itemId = null;
+    public $version = '4.0';
+    public $optionsName = 'tr_seo_options';
+    public $postTypes = null;
 
     public function __construct()
     {
@@ -20,18 +23,37 @@ class Plugin
     public function setup()
     {
         if ( ! defined( 'WPSEO_URL' ) && ! defined( 'AIOSEOP_VERSION' ) ) {
-            define( 'TR_SEO', '1.0' );
+            $this->postTypes = apply_filters('tr_seo_post_types', $this->postTypes);
+            define( 'TR_SEO', $this->version );
+            $this->optionsName = apply_filters( 'tr_seo_options_name', $this->optionsName );
             add_action('tr_model', [$this, 'fillable'], 9999999999, 2 );
-            add_action( 'wp_head', [$this, 'head_data'], 0 );
+            add_action( 'wp_head', [$this, 'head_data'], 1 );
             add_action( 'template_redirect', [$this, 'loaded'], 0 );
             add_filter( 'document_title_parts', [$this, 'title'], 100, 3 );
             remove_action( 'wp_head', 'rel_canonical' );
             add_action( 'wp', [$this, 'redirect'], 99, 1 );
+            add_action('admin_menu', [$this, 'registerPage']);
+
 
             if ( is_admin() ) {
                 add_action( 'add_meta_boxes', [$this, 'seo_meta']);
             }
         }
+    }
+
+    public function registerPage()
+    {
+        if(apply_filters('tr_seo_options_page', true)) {
+            add_options_page( 'SEO Options', 'SEO Options', 'manage_options', 'tr_seo_options', [$this, 'page']);
+        }
+    }
+
+    public function page()
+    {
+        do_action('tr_theme_options_page', $this);
+        echo '<div class="wrap">';
+        include( __DIR__ . '/../page.php' );
+        echo '</div>';
     }
 
     public function fillable( $model )
@@ -45,6 +67,12 @@ class Plugin
             if(!empty($fillable) && !empty($types[$post->post_type]) ) {
                 $model->appendFillableField('seo');
             }
+        } elseif ($model instanceof \TypeRocket\Models\WPOption) {
+            $fillable = $model->getFillableFields();
+
+            if ( ! empty( $fillable )) {
+                $model->appendFillableField( $this->optionsName );
+            }
         }
     }
 
@@ -55,7 +83,7 @@ class Plugin
 
     public function seo_meta()
     {
-        $publicTypes = get_post_types( ['public' => true]);
+        $publicTypes = $this->postTypes ?? get_post_types( ['public' => true] );
         $args        = [
             'label'    => __('Search Engine Optimization'),
             'priority' => 'low',
@@ -83,28 +111,70 @@ class Plugin
         echo '<title>' . $this->title( '|', false, 'right' ) . "</title>";
     }
 
+    public function getLastValidItem(array $options, $callback = 'esc_attr')
+    {
+        $result = null;
+        foreach ($options as $option) {
+            if(!empty($option)) {
+                $value = call_user_func($callback, trim($option));
+
+                if(!empty($value)) {
+                    $result = $value;
+                }
+            }
+        }
+
+        return $result;
+    }
+
     // head meta data
     public function head_data()
     {
         $object_id = (int) $this->itemId;
 
-        // meta vars
+        // Vars
         $url              = get_the_permalink($object_id);
         $seo              = tr_posts_field('seo.meta', $object_id);
+        $seo_global       = get_option($this->optionsName);
         $desc             = esc_attr( $seo['description'] );
-        $og_title         = esc_attr( $seo['og_title'] );
-        $og_desc          = esc_attr( $seo['og_desc'] );
-        $img              = esc_attr( $seo['meta_img'] );
+
+        // Images
+        $img              = !empty($seo['meta_img']) ? wp_get_attachment_image_src( (int) $seo['meta_img'], 'full')[0] : null;
+
+        // Basic
+        $basicMeta['description'] = $desc;
+
+        // OG
+        $ogMeta['og:locale']      = $seo_global['og']['locale'] ?? null;
+        $ogMeta['og:site_name']   = $seo_global['og']['site_name'] ?? null;
+        $ogMeta['og:type']        = $this->getLastValidItem([ is_front_page() ? 'website' : 'article' , $seo['og_type'] ]);
+        $ogMeta['og:title']       = esc_attr( $seo['og_title'] );
+        $ogMeta['og:description'] = esc_attr( $seo['og_desc'] );
+        $ogMeta['og:url']         = $url;
+        $ogMeta['og:image']       = $img;
+
+        // Canonical
         $canon            = esc_attr( $seo['canonical'] );
+
+        // Robots
         $robots['index']  = esc_attr( $seo['index'] );
         $robots['follow'] = esc_attr( $seo['follow'] );
-        $tw['card']       = esc_attr( $seo['tw_card'] );
-        $tw['site']       = esc_attr( $seo['tw_site'] );
-        $tw['image']      = esc_attr( $seo['tw_img'] );
-        $tw['title']      = esc_attr( $seo['tw_title'] );
-        $tw['desc']      = esc_attr( $seo['tw_desc'] );
 
-        // Extra
+        $twMeta['twitter:card']        = esc_attr( $seo['tw_card'] );
+        $twMeta['twitter:title']       = esc_attr( $seo['tw_title'] );
+        $twMeta['twitter:description'] = esc_attr( $seo['tw_desc'] );
+        $twMeta['twitter:site']        = $this->getLastValidItem([$seo_global['tw']['site'],$seo['tw_site']]);
+        $twMeta['twitter:image']       = !empty($seo['tw_img']) ? wp_get_attachment_image_src( (int) $seo['tw_img'], 'full')[0] : null;
+        $twMeta['twitter:creator']     = $this->getLastValidItem([$seo_global['tw']['creator'],$seo['tw_creator']]);
+
+        // Basic
+        foreach ($basicMeta as $basicName => $basicContent) {
+            if(!empty($basicContent)) {
+                echo "<meta name=\"{$basicName}\" content=\"{$basicContent}\" />";
+            }
+        }
+
+        // Canonical
         if ( ! empty( $canon ) ) {
             echo "<link rel=\"canonical\" href=\"{$canon}\" />";
         } else {
@@ -127,51 +197,17 @@ class Plugin
         }
 
         // OG
-        if ( ! empty( $og_title ) ) {
-            echo "<meta property=\"og:title\" content=\"{$og_title}\" />";
-        }
-        if ( ! empty( $og_desc ) ) {
-            echo "<meta property=\"og:description\" content=\"{$og_desc}\" />";
-        }
-        if ( ! empty( $img ) ) {
-            $src = wp_get_attachment_image_src($img, 'full');
-            $src = $src[0];
-            $prefix = 'https';
-
-            if (mb_substr($src, 0, mb_strlen($prefix)) == $prefix) {
-                $src = mb_substr($src, mb_strlen($prefix));
-                $src = 'http' . $src;
+        foreach ($ogMeta as $ogName => $ogContent) {
+            if(!empty($ogContent)) {
+                echo "<meta property=\"{$ogName}\" content=\"{$ogContent}\" />";
             }
-
-            echo "<meta property=\"og:image\" content=\"{$src}\" />";
-        }
-        if( ! empty($url) ) {
-            echo "<meta property=\"og:url\" content=\"{$url}\" />";
         }
 
         // Twitter
-        if( ! empty($tw['card']) ) {
-            echo "<meta name=\"twitter:card\" content=\"{$tw['card']}\" />";
-        }
-        if( ! empty($tw['site']) ) {
-            echo "<meta name=\"twitter:site\" content=\"{$tw['site']}\" />";
-        }
-        if( ! empty($tw['image']) ) {
-            $src = wp_get_attachment_image_src($tw['image'], 'full');
-            $src = $src[0];
-
-            echo "<meta name=\"twitter:image\" content=\"{$src}\" />";
-        }
-        if( ! empty($tw['title']) ) {
-            echo "<meta name=\"twitter:title\" content=\"{$tw['title']}\" />";
-        }
-        if( ! empty($tw['desc']) ) {
-            echo "<meta name=\"twitter:desciption\" content=\"{$tw['desc']}\" />";
-        }
-
-        // Basic
-        if ( ! empty( $desc ) ) {
-            echo "<meta name=\"description\" content=\"{$desc}\" />";
+        foreach ($twMeta as $twName => $twContent) {
+            if(!empty($twContent)) {
+                echo "<meta name=\"{$twName}\" content=\"{$twContent}\" />";
+            }
         }
     }
 
@@ -225,6 +261,11 @@ class Plugin
                 'help'  => __('Set the open graph description to override "Search Result Description". Will be used by FB, Google+ and Pinterest.')
             ];
 
+            $og_type = [
+                'label' => __('Page Type'),
+                'help'  => __('Set the open graph description to override "Search Result Description". Will be used by FB, Google+ and Pinterest.')
+            ];
+
             $img = [
                 'label' => __('Image'),
                 'help'  => __("The image is shown when sharing socially using the open graph protocol. Will be used by FB, Google+ and Pinterest. Need help? Try the Facebook <a href=\"https://developers.facebook.com/tools/debug/og/object/\" target=\"_blank\">open graph object debugger</a> and <a href=\"https://developers.facebook.com/docs/sharing/best-practices\" target=\"_blank\">best practices</a>.")
@@ -232,6 +273,7 @@ class Plugin
 
             echo $form->text( 'og_title', [], $og_title );
             echo $form->textarea( 'og_desc', [], $og_desc );
+            echo $form->select( 'og_type', [], $og_type )->setOptions(['Article' => 'article', 'Profile' => 'profile']);
             echo $form->image( 'meta_img', [], $img );
         };
 
@@ -250,7 +292,8 @@ class Plugin
                 __('Summary large image') => 'summary_large_image',
             ];
 
-            echo $form->text( 'tw_site')->setLabel('Twitter account')->setAttribute('placeholder', '@username');
+            echo $form->text( 'tw_site')->setLabel('Twitter Account')->setAttribute('placeholder', '@username');
+            echo $form->text( 'tw_creator')->setLabel('Author Twitter Account')->setAttribute('placeholder', '@username');
             echo $form->select( 'tw_card')->setOptions($card_opts)->setLabel('Card Type')->setSetting('help', $tw_help);
             echo $form->text( 'tw_title')->setLabel('Title')->setAttribute('maxlength', 70 );
             echo $form->textarea( 'tw_desc')->setLabel('Description')->setHelp( __('Description length is dependent on card type.') );
