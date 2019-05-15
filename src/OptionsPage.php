@@ -15,10 +15,10 @@ class OptionsPage
 
     public function admin_menu()
     {
-        add_options_page( 'SEO Options', 'SEO Options', 'manage_options', 'tr_seo_options', [$this, 'page']);
+        add_options_page( 'SEO Options', 'SEO Options', 'manage_options', 'tr_seo_options', [$this, 'add_options_page']);
     }
 
-    public function tr_model()
+    public function add_options_page()
     {
         do_action('tr_theme_options_page', $this);
         echo '<div class="wrap">';
@@ -26,7 +26,7 @@ class OptionsPage
         echo '</div>';
     }
 
-    public function fillable( $model )
+    public function tr_model( $model )
     {
         if ($model instanceof \TypeRocket\Models\WPOption) {
             if (!empty( $model->getFillableFields() )) {

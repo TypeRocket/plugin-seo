@@ -34,16 +34,46 @@ class PostTypeMeta
 
     public function add_meta_boxes()
     {
-        $args = [
+        // SEO Meta Box
+        $seo_args = [
             'label'    => __('Search Engine Optimization'),
             'priority' => 'low',
-            'callback' => [$this, 'callback']
+            'callback' => [$this, 'callback_seo']
         ];
-        $obj = new \TypeRocket\Register\MetaBox( 'tr_seo', null, $args );
-        $obj->addPostType( $this->postTypes )->register();
+
+        $seo = new \TypeRocket\Register\MetaBox( 'tr_seo', null, $seo_args );
+        $seo->addPostType( $this->postTypes )->register();
+
+        // Google Tools Meyta Box
+        $tool_args = [
+            'label'    => __('Google Tools'),
+            'priority' => 'low',
+            'callback' => [$this, 'callback_tools']
+        ];
+
+        $tool = new \TypeRocket\Register\MetaBox( 'tr_seo_tools', null, $tool_args );
+        $tool->addPostType( $this->postTypes )->register();
     }
 
-    public function callback()
+    /**
+     * Google Tools - Meta Box
+     */
+    public function callback_tools()
+    {
+        global $post;
+
+        $link = esc_url_raw(get_permalink($post));
+
+        $schema = "<a class=\"button\" href=\"https://search.google.com/structured-data/testing-tool/u/0/#url=$link\" target=\"_blank\">Analyze Schema</a>";
+        $speed = "<a class=\"button\" href=\"https://developers.google.com/speed/pagespeed/insights/?url=$link\" target=\"_blank\">Analyze Page Speed</a>";
+
+        echo "<div style='padding: 12px 12px 10px;'><div class='button-group'>{$schema}{$speed}</div></div>";
+    }
+
+    /**
+     * Search Engine Optimization - Meta Box
+     */
+    public function callback_seo()
     {
         // build form
         $form = new \TypeRocket\Elements\Form();
@@ -122,9 +152,6 @@ class PostTypeMeta
 
         // Advanced
         $advanced = function() use ($form){
-            global $post;
-
-            $link = esc_url_raw(get_permalink($post));
 
             $redirect = [
                 'label'    => __('301 Redirect'),
@@ -167,11 +194,6 @@ class PostTypeMeta
                 $form->select( 'follow', [], $follow )->setOptions($follow_opts),
                 $form->select( 'index', [], $help )->setOptions($index_opts)
             ]);
-
-            $schema = "<a class=\"button\" href=\"https://search.google.com/structured-data/testing-tool/u/0/#url=$link\" target=\"_blank\">Analyze Schema</a>";
-            $speed = "<a class=\"button\" href=\"https://developers.google.com/speed/pagespeed/insights/?url=$link\" target=\"_blank\">Analyze Page Speed</a>";
-
-            echo $form->rowText('<div class="control-label"><span class="label">Google Tools</span></div><div class="control"><div class="button-group">'.$speed.$schema.'</div></div>');
         };
 
         $tabs = new \TypeRocket\Elements\Tabs();
