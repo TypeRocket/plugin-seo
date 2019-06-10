@@ -22,7 +22,7 @@ class PostTypeMeta
     {
         global $post;
 
-        if($model instanceof \TypeRocket\Models\WPPost) {
+        if(!empty($post) && $model instanceof \TypeRocket\Models\WPPost) {
             $fillable = $model->getFillableFields();
             /** @var \WP_Post $data */
             $types = get_post_types(['public' => true]);
